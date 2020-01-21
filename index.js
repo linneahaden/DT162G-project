@@ -13,6 +13,7 @@ mongoose.connect('mongodb://localhost:27017/projectDB', {
 });
 
 //Ansluter till databas på Mlab.com.
+// TODO: Nya inloggningsuppgifter
 // mongoose.connect('mongodb+srv://linnea:kaptensdaleN99@cluster0-eijhp.mongodb.net/courses?retryWrites=true&w=majority', { useNewUrlParser: true });
 
 //Body parser
@@ -21,8 +22,9 @@ app.use(bodyParser.urlencoded({
   extended: false
 }));
 
-//Läser in databas-schema
+//Läser in databas-scheman
 var Post = require('./app/models/post.js');
+var Category = require('./app/models/category.js');
 
 // Gör webbtjänsten tillgänglig från alla domäner
 app.all('/*', function(req, res, next) {
@@ -44,7 +46,7 @@ app.listen(port, function() {
 });
 
 //**************************************
-//Hämta inläggslista
+//Hämta alla inlägg
 //**************************************
 app.get('/posts', function(req, res) {
   Post.find(function(err, Post) {
@@ -80,14 +82,13 @@ app.get('/posts/:postid', function(req, res) {
 //Lägga till inlägg
 //**************************************
 app.post('/posts', function(req, res) {
-  //Ny instans av Post
   var newpost = new Post();
-  console.log(req.body);
+  var categoryId = req.body.categoryId
 
   //Skapar nytt objekt
   newpost.title = req.body.title;
   newpost.url = req.body.url;
-  newpost.category = req.body.category;
+  newpost.category = [req.body.categoryId];
   newpost.votesUp = 0;
   newpost.votesDown = 0;
   newpost.comments = [];
@@ -98,10 +99,54 @@ app.post('/posts', function(req, res) {
       res.send(err);
     } else {
       res.send('Lägger till inlägg.')
-      // res.redirect('/');
+      // console.log(newpost._id);
+
+      // Efterfrågar funktioner för populate i kategorifält
+      // och för att lägga till inläggs-id i kategorin
+      updateCategory(newpost._id, categoryId);
+      populateCategoryField(newpost._id);
     }
   });
 });
+
+// Populate category-fält i inlägg
+// Svaret loggas ut rätt i konsollen men sparas inte i databasen.
+// Vad är det jag missar?
+const populateCategoryField = (id) => {
+    return Post.findOne(id)
+    .populate('category', 'categoryName').exec((err, post) => {
+    console.log("Populated Post: \n" + post);
+    });
+}
+
+// Lägger till inläggs-id i kategori.
+const updateCategory = (postId, categoryId) => {
+  // Letar upp kategorin via id och lägger till det nya inläggets id.
+  Category.findByIdAndUpdate(categoryId,
+    {
+      $push: { connectedPosts: postId }
+    }, {
+      safe: true,
+      upsert: true,
+      useFindAndModify: false,
+      new: true
+    },
+    // OBS nedanstående "res" är bortkommenterat då det ger felmeddelande:
+    // Cannot set headers after they are sent to the client
+    // Vet dock inte hur jag annars ska återsända datan.
+
+    function(err, doc) {
+      if (err) {
+        console.log(err);
+      } else {
+        //Returnerar data för efterfrågat dokument.
+        // res.json(doc);
+      }
+    }
+  );
+}
+
+
 
 //**************************************
 //Ändra inlägg
@@ -147,6 +192,8 @@ app.put('/posts/:postid', function(req, res) {
 //**************************************
 //Ta bort inlägg
 //**************************************
+// TODO: Kolla att posten finns innan den tas bort!
+// TODO: Skicka tillbaka hela listan??
 app.delete('/posts/:postid', function(req, res) {
   //Hämtar medskickat _id.
   var singlePost = req.params.postid;
@@ -157,9 +204,9 @@ app.delete('/posts/:postid', function(req, res) {
   }, function(err) {
     if (err) {
       res.send(err);
+    } else {
+      res.send(true);
     }
-    res.send(`Inägg med id ${singlePost} är raderat.`);
-		//Vad är lämpligt att skicka tillbaka här?
   });
 });
 
@@ -238,4 +285,38 @@ app.delete('/posts/:postid/comment/:commentid', function(req, res) {
       }
     }
   );
+});
+
+//**************************************
+//Hämta alla kategorier
+//**************************************
+app.get('/category', function(req, res) {
+  Category.find(function(err, Category) {
+    if (err) {
+      res.send(err);
+    }
+    res.json(Category);
+
+  });
+}); //end app.get
+
+//**************************************
+//Lägga till kategori
+//**************************************
+app.post('/category', function(req, res) {
+  //Ny instans av Post
+  var newcategory = new Category();
+  console.log(req.body);
+
+  //Skapar nytt objekt
+  newcategory.categoryName = req.body.categoryName;
+
+  //Sparar till databasen med Mongoose. Hanterar felmeddelanden.
+  newcategory.save(function(err) {
+    if (err) {
+      res.send(err);
+    } else {
+      res.send('Lägger till kategori.')
+    }
+  });
 });
