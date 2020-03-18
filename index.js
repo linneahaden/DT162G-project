@@ -14,7 +14,7 @@ var app = express();
 
 mongoose.set('useFindAndModify', false);
 
-//Ansluter till databas på Mlab.com.
+//Ansluter till databas på Mlab.
 mongoose.connect('mongodb+srv://projektadmin:GALNAproffessorn@projekt-jkocr.mongodb.net/test?retryWrites=true&w=majority', {
   useNewUrlParser: true
 });
@@ -164,7 +164,6 @@ app.put('/posts/:postid', function(req, res) {
   console.log(body);
 
   // Increment-funktionalitet för votesUp och votesDown.
-  // // TODO: Röster skickas som bool - skriv in detta i readme
   // OBS att ändring av övriga fält inte kan göras tillsammans
   // med upp- eller ner-röster, i detta fall.
   if (req.body.votesUp) {

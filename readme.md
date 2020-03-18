@@ -40,8 +40,9 @@
 
 ##### Uppdatera inlägg
 - (/posts/:postid) PUT  
-- Json, samma som ovan.
-
+- Json, samma som ovan
+- Inlägg kan röstas upp eller ner med {"votesUp" : true} eller {"votesDown" : true}
+- Övriga fält kan inte manipuleras i samma anrop som votesUp/votesDown.
 
 ##### Radera inlägg
 - (/posts/:postid) DELETE

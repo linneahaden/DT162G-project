@@ -14,8 +14,8 @@ var postSchema = new Schema({
   author: String,
   // category: [{ type: Schema.Types.ObjectId, ref: 'Category' }],
   category: {type: String, required: true},
-  votesUp: { type: Number, default: 0 },
-  votesDown: { type: Number, default: 0 },
+  votesUp: {type: Number, default: 0 },
+  votesDown: {type: Number, default: 0 },
   description: {type: String, required: true},
   createdAt: Date,
   comments: [{
@@ -23,18 +23,5 @@ var postSchema = new Schema({
   }]
 });
 
-// function isMyFieldRequired () {
-//     return typeof postSchema.url === 'string'? false : true
-// }
-
 //Exporterar ovanatående schema-objekt.
 module.exports = mongoose.model('Post', postSchema);
-
-
-
-// var userSchema = new mongoose.Schema({
-//     myField: {
-//         type: String,
-//         required: isMyFieldRequired,
-//     }
-// });
