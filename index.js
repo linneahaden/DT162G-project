@@ -42,7 +42,8 @@ app.all('/*', function(req, res, next) {
 app.use(express.static(path.join(__dirname, 'public')));
 
 //Port för anslutning
-var port = 4000;
+// var port = 4000;
+const port = process.env.PORT || 3000
 
 //Starta server
 app.listen(port, function() {
