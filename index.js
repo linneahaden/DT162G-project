@@ -8,13 +8,17 @@ var mongoose = require('mongoose');
 var app = express();
 
 //Ansluter till databasen projectDB via localhost.
-mongoose.connect('mongodb://localhost:27017/projectDB', {
+// mongoose.connect('mongodb://localhost:27017/projectDB', {
+//   useNewUrlParser: true
+// });
+
+mongoose.set('useFindAndModify', false);
+
+//Ansluter till databas på Mlab.com.
+mongoose.connect('mongodb+srv://projektadmin:GALNAproffessorn@projekt-jkocr.mongodb.net/test?retryWrites=true&w=majority', {
   useNewUrlParser: true
 });
 
-//Ansluter till databas på Mlab.com.
-// TODO: Nya inloggningsuppgifter
-// mongoose.connect('mongodb+srv://linnea:kaptensdaleN99@cluster0-eijhp.mongodb.net/courses?retryWrites=true&w=majority', { useNewUrlParser: true });
 
 //Body parser
 app.use(bodyParser.json());
@@ -48,24 +52,25 @@ app.listen(port, function() {
 //**************************************
 //Hämta alla inlägg
 //**************************************
+
 app.get('/posts', function(req, res) {
   Post.find(function(err, Post) {
     if (err) {
       res.send(err);
     }
     res.json(Post);
-
   });
 }); //end app.get
 
 //**************************************
 //Hämta enskilt inlägg
 //**************************************
+
 app.get('/posts/:postid', function(req, res) {
   //Hämtar medskickat _id.
   var singlePost = req.params.postid;
   console.log("Efterfrågat _id: " + singlePost);
-  console.log(req);
+  // console.log(req);
   //Hämtar efterfrågat inlägg. Hanterar felmeddelanden.
   Post.find({
     _id: singlePost
@@ -81,16 +86,17 @@ app.get('/posts/:postid', function(req, res) {
 //**************************************
 //Lägga till inlägg
 //**************************************
+
 app.post('/posts', function(req, res) {
   var newpost = new Post();
-  var categoryId = req.body.categoryId
 
   //Skapar nytt objekt
   newpost.title = req.body.title;
   newpost.url = req.body.url;
-  newpost.category = [req.body.categoryId];
+  newpost.category = req.body.category;
   newpost.votesUp = 0;
-  newpost.votesDown = 0;
+  newpost.votesDown = 0
+  newpost.description = req.body.description;
   newpost.comments = [];
 
   //Sparar till databasen med Mongoose. Hanterar felmeddelanden.
@@ -98,13 +104,12 @@ app.post('/posts', function(req, res) {
     if (err) {
       res.send(err);
     } else {
-      res.send('Lägger till inlägg.')
-      // console.log(newpost._id);
-
       // Efterfrågar funktioner för populate i kategorifält
       // och för att lägga till inläggs-id i kategorin
-      updateCategory(newpost._id, categoryId);
-      populateCategoryField(newpost._id);
+      updateCategory(newpost._id, req.body.categoryId);
+      // populateCategoryField(newpost._id);
+      //res.send('Lägger till inlägg.')
+      res.json(newpost);
     }
   });
 });
@@ -112,12 +117,12 @@ app.post('/posts', function(req, res) {
 // Populate category-fält i inlägg
 // Svaret loggas ut rätt i konsollen men sparas inte i databasen.
 // Vad är det jag missar?
-const populateCategoryField = (id) => {
-    return Post.findOne(id)
-    .populate('category', 'categoryName').exec((err, post) => {
-    console.log("Populated Post: \n" + post);
-    });
-}
+// const populateCategoryField = (id) => {
+//     return Post.findOne(id)
+//     .populate('category', 'categoryName').exec((err, post) => {
+//     console.log("Populated Post: \n" + post);
+//     });
+// }
 
 // Lägger till inläggs-id i kategori.
 const updateCategory = (postId, categoryId) => {
@@ -134,7 +139,6 @@ const updateCategory = (postId, categoryId) => {
     // OBS nedanstående "res" är bortkommenterat då det ger felmeddelande:
     // Cannot set headers after they are sent to the client
     // Vet dock inte hur jag annars ska återsända datan.
-
     function(err, doc) {
       if (err) {
         console.log(err);
@@ -194,6 +198,7 @@ app.put('/posts/:postid', function(req, res) {
 //**************************************
 // TODO: Kolla att posten finns innan den tas bort!
 // TODO: Skicka tillbaka hela listan??
+// TODO: Ta bort inläggs-id ur array i kategorin.
 app.delete('/posts/:postid', function(req, res) {
   //Hämtar medskickat _id.
   var singlePost = req.params.postid;
@@ -250,7 +255,41 @@ app.post('/posts/:postid/comment', function(req, res) {
 //Ändra kommentar
 //**************************************
 
-// TODO: Fixa detta.
+app.put('/posts/:postid/comment/:commentid', function(req, res) {
+  //Hämtar medskickat _id.
+  var singlePost = req.params.postid;
+  var singleComment = req.params.commentid;
+  var body = req.body.content;
+
+  console.log(singlePost);
+  console.log(singleComment);
+  console.log(body);
+
+  Post.findOneAndUpdate(
+       { _id: singlePost, 'comments._id': singleComment },
+       //Uppdaterar kommentaren. Ger dock ett nytt id.
+       //Hur gör man då om man vill länka till en kommentar om id:t kan ändras?
+       { $set: {'comments.$': { 'content': body }}},
+       {
+         safe: true,
+         upsert: true,
+         useFindAndModify: false,
+         //För att få tillbaka de uppdaterade värdena
+         new: true
+       },
+       function(err, doc) {
+         if (err) {
+           console.log(err);
+           return res.send(err);
+         } else {
+           //Returnerar data för efterfrågat dokument.
+           res.json(doc);
+         }
+       }
+     );
+});
+
+
 
 //**************************************
 //Ta bort kommentar
@@ -320,3 +359,10 @@ app.post('/category', function(req, res) {
     }
   });
 });
+
+//**************************************
+//Ta bort kategori
+//**************************************
+
+// TODO: Fixa detta.
+// OBS Vad göra med de inlägg som blir utan kategori?

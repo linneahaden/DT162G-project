@@ -9,7 +9,7 @@ var Schema = mongoose.Schema;
 
 //Ny instans av schema-klassen
 var categorySchema = new Schema({
-  categoryName: String,
+  categoryName:  {type: String, required: true},
   connectedPosts:  [
     {
       type: mongoose.Schema.Types.ObjectId,
