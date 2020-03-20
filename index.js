@@ -50,14 +50,6 @@ app.listen(port, function() {
   console.log(`Servern körs på port ${port}`);
 });
 
-app.get('/*', function(req, res) {
-  res.sendFile(path.join(__dirname, 'https://pensive-carson-644f33.netlify.com/'), function(err) {
-    if (err) {
-      res.status(500).send(err)
-    }
-  })
-})
-
 //**************************************
 //Hämta alla inlägg
 //**************************************
