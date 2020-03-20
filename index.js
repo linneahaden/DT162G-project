@@ -43,12 +43,20 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 //Port för anslutning
 // var port = 4000;
-const port = process.env.PORT || 3000
+const port = process.env.PORT || 4000
 
 //Starta server
 app.listen(port, function() {
   console.log(`Servern körs på port ${port}`);
 });
+
+app.get('/*', function(req, res) {
+  res.sendFile(path.join(__dirname, 'https://pensive-carson-644f33.netlify.com/'), function(err) {
+    if (err) {
+      res.status(500).send(err)
+    }
+  })
+})
 
 //**************************************
 //Hämta alla inlägg
