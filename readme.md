@@ -1,5 +1,6 @@
-# Projekt javascriptbaserad webbutveckling
+# Projekt javascriptbaserad webbutveckling vt 2020
 ### (Denna readme omfattar lösningen för webbtjänsten)
+Projekt skapat av Linnéa Hådén inom ramen för kursen javascriptbaserad webbutveckling, vt 2020.
 
 ## Krav
 
